@@ -1,0 +1,47 @@
+import keyboard
+import time
+minutes = 0
+import urllib.request
+from urllib.request import Request, urlopen
+import json
+init_rate = 90 #change in sub gap per minute
+delay = 1.5 #minutes between comments
+api_url = "https://www.googleapis.com/youtube/v3/channels?part=statistics&forUsername="
+channels=[['PewDiePie',0,0],['tseries',0,0]]
+
+key = "AIzaSyDMJdyhxW4Zd7on1RHMOUCxHa7bnVciZOc"
+#Setup tuples with rate
+for i in range(2):
+    data = urllib.request.urlopen(api_url + channels[i][0] + "&key=" + key).read()
+    channels[i][2] = int(json.loads(data)["items"][0]["statistics"]["subscriberCount"])+init_rate*i
+
+
+print(channels)
+time.sleep(8)
+while 1:
+    for i in range(2):
+        data = urllib.request.urlopen(api_url + channels[i][0] + "&key=" + key).read()
+        channels[i][1]= channels[i][2]
+        channels[i][2] = int(json.loads(data)["items"][0]["statistics"]["subscriberCount"])
+
+    subgap = channels[0][2]-channels[1][2]
+    oldSubgap = channels[0][1]-channels[1][1]
+
+    subgapRate = (subgap-oldSubgap)/delay
+
+    if minutes%(delay*2) == 0:
+        q = Request('https://icanhazdadjoke.com', headers={'User-Agent': 'ChatBot', 'Accept': 'application/json'})
+        joke = json.loads(urllib.request.urlopen(q).read())['joke']
+        keyboard.write("Dad Joke (#"+str(int(minutes/(delay*2)+3))+" ): "+joke)
+    else:
+        keyboard.write("The sub gap rate (per min) is: " + str(subgapRate))
+        target = 5000*(int(subgap/5000)+1)
+        if subgapRate>0:
+            keyboard.write(" So Pewdiepie wil hit "+str(target)+" in: "+str(int((target-subgap)/subgapRate))+" mins")
+        else:
+            keyboard.write(" T-Series will overtake Pewdiepie in: " + str(int(subgap / abs(subgapRate))) + " mins")
+
+    keyboard.press_and_release('enter')
+    time.sleep(60*delay)
+    minutes += delay
+    print(minutes)
